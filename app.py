@@ -3,6 +3,7 @@ import cv2
 
 app = Flask(__name__)
 
+# TODO : Services indépendants : cam et vidéo / Faire les petits services / Faire un readme
 
 def generate_frames():
     print('Starting camera...')
