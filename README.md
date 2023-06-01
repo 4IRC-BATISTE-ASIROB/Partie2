@@ -15,6 +15,8 @@ graph TD
 
 Mon application Flask est une application web construite avec le framework Flask en Python. Elle utilise OpenCV pour afficher des flux vidéo à partir d'une webcam ou d'un fichier vidéo et affiche l'état des LEDs qui peuvent être activées/désactivées via l'interface utilisateur.
 
+Vidéo démo : [Vidéo YT Démo](https://youtu.be/6myBoZKQD5I)
+
 ## Structure de l'application
 
 L'application est composée des fichiers suivants :
