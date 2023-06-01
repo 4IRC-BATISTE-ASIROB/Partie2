@@ -1,9 +1,11 @@
 import cv2
 import random
+import numpy as np
 from flask import Flask, Response, render_template, request
 
-num_leds = 5
+temperature_values = []
 
+num_leds = 5
 led_states = [random.choice([True, False]) for _ in range(num_leds)]
 
 app = Flask(__name__)
@@ -11,10 +13,15 @@ app = Flask(__name__)
 # TODO : Services indépendants : cam et vidéo / Faire les petits services / Faire un readme
 
 
-def generate_frames(mode):
+# Skip every 2 frames to speed up processing.
+def generate_frames(mode, skip_frames=2):
     print('Starting camera...')
 
-    # Path : C:\Users\batis\Desktop\ASI-Robotique\Partie2\static\videos\voitures.mp4
+    # Load the cascade
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+    frame_count = 0
+
     while True:
         if mode == "webcam":
             camera = cv2.VideoCapture(0)
@@ -25,12 +32,25 @@ def generate_frames(mode):
             if not success:
                 break
             else:
-                ret, buffer = cv2.imencode('.jpg', frame)
-                frame = buffer.tobytes()
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                frame_count += 1
+                if frame_count % skip_frames == 0: # Process only every 'skip_frames' frame
+                    # Convert to grayscale
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+                    # Detect the faces
+                    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+
+                    # Draw the rectangle around each face
+                    for (x, y, w, h) in faces:
+                        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+
+                    ret, buffer = cv2.imencode('.jpg', frame)
+                    frame = buffer.tobytes()
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n') # concat frame one by one and show result, yield : return a generator
         # Don't forget to release the video capture at the end of the video.
         camera.release()
+
 
 
 @app.route('/toggle_led', methods=['POST'])
@@ -40,11 +60,19 @@ def toggle_led():
     print(f"Toggle led {led_id} to {led_states[led_id]}")
     return {'new_state': led_states[led_id]}
 
+@app.route('/get_temperature_values', methods=['GET'])
+def get_temperature_values():
+    return {'temperature_values': temperature_values}
+
 @app.route('/get_temperature', methods=['GET'])
 def get_temperature():
     # Here I'm generating a random temperature for the sake of the example,
     # but in a real scenario you would get this data from a real sensor.
     temp = random.uniform(18, 23)
+    temperature_values.append(temp)
+    # Limit stored temperature values to 20
+    if len(temperature_values) > 20:
+        temperature_values.pop(0)
     return {'temperature': temp}
 
 

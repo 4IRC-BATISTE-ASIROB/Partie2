@@ -57,6 +57,17 @@
         },
     });
 
+    // Fetch stored temperature values and update chart
+    $.get("/get_temperature_values", function (data) {
+        var labels = [];
+        for (var i = 0; i < data.temperature_values.length; i++) {
+            labels.push(i);
+        }
+        temperatureChart.data.labels = labels;
+        temperatureChart.data.datasets[0].data = data.temperature_values;
+        temperatureChart.update();
+    });
+
     function updateTemperature() {
         $.get("/get_temperature", function (data) {
             // Get current date and time
@@ -89,6 +100,7 @@
     updateTemperature();
 
     // Then call it every 5 seconds
-    setInterval(updateTemperature, 1000);
+    setInterval(updateTemperature, 5000);
 </script>
 {% endblock %}
+
