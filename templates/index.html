@@ -1,4 +1,94 @@
-{% extends "layout.html" %}
-{% block content %}
-    <h1>Welcome to the Home Page</h1>
+{% extends "layout.html" %} {% block content %}
+<h1>Welcome to the Home Page</h1>
+
+<h2 class="d-flex justify-content-center">LED Status</h2>
+<div id="led-status" class="d-flex justify-content-around flex-wrap">
+    {% for i in range(num_leds) %}
+    <button class="led btn btn-lg m-2" id="led-{{i}}" data-led-id="{{i}}" style="width: 150px;">
+        LED {{i}}:
+        <span class="led-state">{{'On' if led_states[i] else 'Off'}}</span>
+    </button>
+    {% endfor %}
+</div>
+
+<h2 class="d-flex justify-content-center mt-5">Temperature</h2>
+<!-- Center -->
+<div style="background-color: aliceblue; display: flex; width: 50%; Transform: translate(50%); padding: 20px;">
+    <canvas id="temperatureChart"></canvas>
+</div>
+
+{% endblock %} {% block scripts %}
+<script>
+    $(document).ready(function () {
+        $(".led").each(function () {
+            var ledId = $(this).data("led-id");
+            var ledState = $(this).find(".led-state").text().trim() === "On";
+            $(this).css("background-color", ledState ? "green" : "red");
+        });
+
+        $(".led").click(function () {
+            var ledId = $(this).data("led-id");
+            $.post("/toggle_led", { led_id: ledId }, function (data) {
+                $("#led-" + ledId + " .led-state").html(
+                    data.new_state ? "On" : "Off"
+                );
+                $("#led-" + ledId).css(
+                    "background-color",
+                    data.new_state ? "green" : "red"
+                );
+            });
+        });
+    });
+
+    var ctx = document.getElementById("temperatureChart").getContext("2d");
+    var temperatureChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: [], // Initialize an empty array for labels
+            datasets: [
+                {
+                    label: "Temperature",
+                    data: [], // Initialize an empty array for data
+                    fill: false,
+                    borderColor: "rgb(75, 192, 192)",
+                    tension: 0.1,
+                },
+            ],
+        },
+    });
+
+    function updateTemperature() {
+        $.get("/get_temperature", function (data) {
+            // Get current date and time
+            var now = new Date();
+
+            // Format time as HH:MM:SS
+            var time =
+                now.getHours() +
+                ":" +
+                now.getMinutes() +
+                ":" +
+                now.getSeconds();
+
+            // Add new data to chart
+            temperatureChart.data.labels.push(time);
+            temperatureChart.data.datasets[0].data.push(data.temperature);
+
+            // If we have more than 20 data points, remove the oldest one
+            if (temperatureChart.data.labels.length > 20) {
+                temperatureChart.data.labels.shift();
+                temperatureChart.data.datasets[0].data.shift();
+            }
+
+            // Update the chart
+            temperatureChart.update();
+        });
+    }
+
+    // Call your function immediately
+    updateTemperature();
+
+    // Then call it every 5 seconds
+    setInterval(updateTemperature, 1000);
+</script>
 {% endblock %}

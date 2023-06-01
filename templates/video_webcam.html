@@ -12,7 +12,7 @@
     // Fonction pour charger le flux vidéo dans la balise <img>
     function loadVideoStream() {
         var video = document.getElementById("video-stream");
-        video.src = "{{ url_for('video_stream') }}";
+        video.src = "{{ url_for('video_stream_webcam') }}";
 
         // Ajoutez un écouteur d'événements pour cacher le texte de chargement une fois la vidéo chargée
         video.addEventListener("load", function () {
